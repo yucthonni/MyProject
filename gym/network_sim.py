@@ -394,9 +394,9 @@ class SimulatedNetworkEnv(gym.Env):
         self.event_record = {"Events":[]}
         self.episodes_run = -1
 
-    def seed(self, seed=None):
+    '''def seed(self, seed=None):
         self.rand, seed = seeding.np_random(seed)
-        return [seed]
+        return [seed]'''
 
     def _get_all_sender_obs(self):
         sender_obs = self.senders[0].get_obs()

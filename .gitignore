@@ -1,0 +1,7 @@
+#忽略json日志文件
+
+./gym/*.json
+
+#忽略tensorboard日志
+
+./gym/outputs/
