@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import gym
-import network_sim
+import gym.network_sim_exp as network_sim_exp
 import tensorflow as tf
 
 #from stable_baselines.common.policies import FeedForwardPolicy
@@ -34,5 +34,5 @@ env = gym.make('PccNs-v0')
 print("--------------Build Model-------------")
 model=PPO("MlpPolicy",env, verbose=1, batch_size=1024, gamma=0.99,tensorboard_log='./outputs/')
 print("--------------Ready to Learn--------------")
-model.learn(total_timesteps=3200*410)
-model.save("model.zip")
+model.learn(total_timesteps=32000*410)
+model.save("model_1.zip")
