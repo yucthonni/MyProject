@@ -5,6 +5,7 @@
 #忽略tensorboard日志
 
 /gym/outputs/
+/gym/output/
 
 #忽略pycache
 
