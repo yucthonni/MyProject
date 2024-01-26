@@ -1,14 +1,14 @@
 #忽略json日志文件
 
-./gym/*.json
+/gym/*.json
 
 #忽略tensorboard日志
 
-./gym/outputs/
+/gym/outputs/
 
 #忽略pycache
 
-./gym/__pycache__/
+/gym/__pycache__/
 
 #忽略模型
-./gym/*.zip
+/gym/*.zip
