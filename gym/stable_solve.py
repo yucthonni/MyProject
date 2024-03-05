@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import gym
-import gym.network_sim_exp as network_sim_exp
+import network_sim as network_sim
 import tensorflow as tf
 
 from stable_baselines.common.policies import MlpPolicy

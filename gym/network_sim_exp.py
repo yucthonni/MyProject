@@ -13,9 +13,9 @@
 # limitations under the License.
 
 import gymnasium as gym
-from gym import spaces
-from gym.utils import seeding
-from gym.envs.registration import register
+from gymnasium import spaces
+from gymnasium.utils import seeding
+from gymnasium.envs.registration import register
 import numpy as np
 import heapq
 import time
@@ -496,8 +496,6 @@ class SimulatedNetworkEnv(gym.Env):
         with open(filename, 'w') as f:
             json.dump(self.event_record, f, indent=4)
 
-register(id='custom/PccNs-v0', entry_point=SimulatedNetworkEnv)
+register(id='custom/PccNs-v1', entry_point=SimulatedNetworkEnv)
 #env = SimulatedNetworkEnv()
 #env.step([1.0])
-env=SimulatedNetworkEnv()
-env.step([1,0])
