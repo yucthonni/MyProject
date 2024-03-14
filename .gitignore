@@ -12,7 +12,9 @@
 /gym/__pycache__/
 
 #忽略模型
-/gym/*.zip
+*.zip
+*.pkl
+*.pyc
 
 #断点
 /gym/checkpoint
