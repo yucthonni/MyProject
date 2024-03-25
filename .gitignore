@@ -1,6 +1,8 @@
 #忽略json日志文件
 
 /gym/*.json
+/RILE/*.json
+log
 
 #忽略tensorboard日志
 
@@ -18,3 +20,6 @@
 
 #断点
 /gym/checkpoint
+/gym/*.meta
+/gym/*.index
+/gym/*00001

@@ -11,64 +11,6 @@ if(torch.cuda.is_available()):
     torch.cuda.empty_cache()
 
 ################################## PPO Policy ##################################
-class ReplayBuffer:
-    def __init__(self,buffer_size):
-        self.buffer_size=buffer_size
-        self.index=0
-        self.state=[]
-        self.action=[]
-        self.logprobs=[]
-        self.next_state=[]
-        self.reward=[]
-        self.state_value=[]
-        self.done=[]
-        
-        
-    def store(self,state,action,log_prob,next_state,reward,state_value,done):
-        state=torch.FloatTensor(state).to(device)
-        if self.index>=self.buffer_size:
-            index=self.index%self.buffer_size
-            self.state[index]=state
-            self.action[index]=action
-            self.logprobs[index]=log_prob
-            self.next_state[index]=next_state
-            self.reward[index]=reward
-            self.state_value[index]=state_value
-            self.done[index]=done
-        else:
-            self.state.append(state)
-            self.action.append(action)
-            self.logprobs.append(log_prob)
-            self.next_state.append(next_state)
-            self.reward.append(reward)
-            self.state_value.append(state_value)
-            self.done.append(done)
-        
-        self.index+=1
-        
-        
-    def sample(self,batch_size,return_index=False):
-        sample_index=np.random.choice(batch_size,self.buffer_size,replace=True)
-        if return_index:
-            return sample_index
-        state=self.state
-        action=self.action
-        log_prob=self.logprobs
-        next_state=self.next_state
-        reward=self.reward
-        state_value=self.state_value
-        done=self.done
-        return state,action,log_prob,next_state,reward,state_value,done
-    
-    def clean(self):#这里暂时有个bug，不能解决append那里，不过暂时用不上这个函数，就先不管了
-        self.index=0
-        self.state=[]
-        self.action=[]
-        self.logprobs=[]
-        self.next_state=[]
-        self.reward=[]
-        self.state_value=[]
-        self.done=[]
 # class RolloutBuffer:
 #     def __init__(self):
 #         self.actions = []
@@ -176,7 +118,7 @@ class ActorCritic(nn.Module):
 
 
 class PPO:
-    def __init__(self, state_dim, action_dim, buffer_size, lr_actor=1e-3, lr_critic=1e-3, gamma=0.99, K_epochs=80, eps_clip=0.2, has_continuous_action_space=True, action_std_init=0.6):
+    def __init__(self, state_dim, action_dim, replay_buffer, lr_actor=1e-3, lr_critic=1e-3, gamma=0.99, K_epochs=80, eps_clip=0.2, has_continuous_action_space=True, action_std_init=0.6):
 
         self.has_continuous_action_space = has_continuous_action_space
 
@@ -186,7 +128,7 @@ class PPO:
         self.eps_clip = eps_clip
         self.K_epochs = K_epochs
         
-        self.buffer = ReplayBuffer(buffer_size)
+        self.buffer = replay_buffer
 
         self.policy = ActorCritic(state_dim, action_dim, has_continuous_action_space, action_std_init).to(device)
         self.optimizer = torch.optim.Adam([

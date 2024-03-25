@@ -45,6 +45,7 @@ class MyMlpPolicy(FeedForwardPolicy):
         training_sess = sess
 
 env = gym.make('PccNs-v0')
+print(env.reset())
 #env = gym.make('CartPole-v0')
 
 gamma = arg_or_default("--gamma", default=0.99)

@@ -4,16 +4,14 @@ from gym import spaces
 import numpy as np
 import torch.nn as nn
 
-epsilon=0.05
+epsilon=0.005
 
 class RewardEnv(gym.Env):
-    def __init__(self,student_state_box,student_action_box):
+    def __init__(self):
         super(RewardEnv,self).__init__()
         
         #Init State Space
-        obs_low=np.concatenate([spaces.flatten_space(student_state_box).low,spaces.flatten_space(student_action_box).low])
-        obs_high=np.concatenate([spaces.flatten_space(student_state_box).high,spaces.flatten_space(student_action_box).high])
-        self.observation_space=spaces.Box(obs_low,obs_high)
+        self.observation_space=spaces.Box(low=-1e6,high=1e6,shape=(3,10))
         
         #Init Action Space
         self.action_space=spaces.Box(low=-1e3,high=1e3,shape=(1,))
@@ -33,8 +31,8 @@ class RewardEnv(gym.Env):
     def render(self):
         pass
     
-# register(
-#     id='RewardEnv-v1',
-#     entry_point='reward_env:RewardEnv'
-# )
+register(
+    id='RewardEnv-v1',
+    entry_point='reward_env:RewardEnv'
+)
     
