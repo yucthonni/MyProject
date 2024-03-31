@@ -2,9 +2,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 from tqdm import tqdm
-from specbuffer import ReplayBuffer
-
-device='cuda'
+from buffer import ReplayBuffer
 
 class Discriminator_network(nn.Module):
     def __init__(self,input_dim,hidden_dim):
@@ -37,7 +35,7 @@ class Discriminator():
         
     def collect_dist(self,batch_size):
         index=self.sbuffer.sample(batch_size,True)
-        state=self.sbuffer.from_after_state(index)
+        state=torch.stack([self.sbuffer.state[i] for i in index],dim=0)
         action=torch.stack([self.sbuffer.action[i] for i in index],dim=0)
         self.policy_dist=torch.cat((state,action),1)
         
@@ -48,7 +46,6 @@ class Discriminator():
                 stu_traj=self.collect_dist(self.batch_size)
                 eo=self.model(self.expert_dist)
                 so=self.model(self.policy_dist)
-                print(so.device)
                 loss=self.loss_criterion(eo,torch.ones(len(self.expert_dist),1))+\
                     self.loss_criterion(so,torch.zeros(self.batch_size,1))
                 

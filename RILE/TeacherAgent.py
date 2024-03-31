@@ -1,9 +1,17 @@
+from Discriminator import Discriminator
+import torch
+from tqdm import tqdm
+from PPOee import PPO
+
+hidden_dim=64
+device='cuda'
+
 class TeacherAgent():
-    def __init__(self,state_dim,action_dim,env:CustomEnv):
+    def __init__(self,state_dim,action_dim,env,expert_trajectory):
         self.trajectory_buffer=env.student_buffer
         self.replay_buffer=env.teacher_buffer
         self.model=PPO(state_dim+action_dim,1,self.replay_buffer)
-        self.discriminator=Discriminator(state_dim+action_dim,hidden_dim,64,self.trajectory_buffer,self.trajectory_buffer)
+        self.discriminator=Discriminator(state_dim+action_dim,hidden_dim,64,self.trajectory_buffer,expert_trajectory)
         
     def ComputeReward(self):
         pb=tqdm(range(min(self.trajectory_buffer.index,self.trajectory_buffer.buffer_size)))
@@ -22,9 +30,9 @@ class TeacherAgent():
             pb.update()
         self.discriminator.collect_expert()
             
-    def trainPPO(self,total_timestep:int):
+    def trainPPO(self,total_timestep:int,batch_size:int):
         for i in range(total_timestep):
-            self.model.update(1024)
+            self.model.update(batch_size)
             
     def trainDiscriminator(self,total_timestep:int):
         self.discriminator.update(total_timestep,False)
@@ -32,8 +40,13 @@ class TeacherAgent():
     def train(self,total_timestep:int,PPO_timestep:int,D_timestep:int):
         pb=tqdm(range(total_timestep))
         for i in pb:
+            print('Computing reward...')
+            self.ComputeReward()
+            print('Training Discriminator...')
             self.trainDiscriminator(D_timestep)
-            pb.update()
+            print('Training PPO...')
             self.trainPPO(PPO_timestep)
             pb.update()
         
+    def save(self):
+        pass

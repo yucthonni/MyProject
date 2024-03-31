@@ -58,9 +58,6 @@ class ReplayBuffer:
         teacher_reward=[self.teacher_reward[i] for i in sample_index]
         return state,action,log_prob,next_state,reward,state_value,done,teacher_reward
     
-    def state_from_index(self,index:list):
-        return torch.stack([self.state[i] for i in index],dim=0).detach()
-    
     def clean(self):#这里暂时有个bug，不能解决append那里，不过暂时用不上这个函数，就先不管了
         self.index=0
         self.state=[]

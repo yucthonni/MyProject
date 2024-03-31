@@ -1,0 +1,42 @@
+[
+     {
+          "model_name": "2100",
+          "reward_mean": -130.78291331558768,
+          "reward_var": 972.333215116514
+     },
+     {
+          "model_name": "2102",
+          "reward_mean": -3.7740927979059373,
+          "reward_var": 818.8005528293432
+     },
+     {
+          "model_name": "2104",
+          "reward_mean": 272.18862922664476,
+          "reward_var": 993.291176672852
+     },
+     {
+          "model_name": "2106",
+          "reward_mean": -382.6215279839331,
+          "reward_var": 1484.6601561867587
+     },
+     {
+          "model_name": "2109",
+          "reward_mean": -434.2260817637501,
+          "reward_var": 1835.754488027452
+     },
+     {
+          "model_name": "2111",
+          "reward_mean": -74.0073448407463,
+          "reward_var": 974.8477043816666
+     },
+     {
+          "model_name": "2113",
+          "reward_mean": 269.93484392239134,
+          "reward_var": 762.1541444165281
+     },
+     {
+          "model_name": "2115",
+          "reward_mean": 108.00442428658073,
+          "reward_var": 616.3945210120702
+     }
+]

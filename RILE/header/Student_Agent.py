@@ -1,11 +1,10 @@
 from tqdm import tqdm
-from PPOee import PPO
+from PPO import PPO
 
 class StudentAgent:
     def __init__(self,state_dim,action_dim,env):
         self.env=env
-        # self.replay_buffer=self.env.student_buffer
-        self.replay_buffer=env.student_buffer
+        self.replay_buffer=self.env.student_buffer
         self.model=PPO(state_dim,action_dim,self.replay_buffer)
         
     def generate_trajectory(self,step:int):
@@ -18,7 +17,6 @@ class StudentAgent:
                 a,_,l,v=self.model.select_action(s)
                 s_,r,d,_=self.env.step(a)
                 self.model.buffer.store(s,a,l,s_,r,v,d)
-                s=s_
                 num+=1
             #pb.update()
         print('生成',num,'条轨迹')   

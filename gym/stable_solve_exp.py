@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import gymnasium as gym
-import network_sim_exp
+import gym
+import network_sim
 
 #from stable_baselines.common.policies import FeedForwardPolicy
 from stable_baselines3 import PPO
@@ -27,24 +27,29 @@ from common.simple_arg_parse import arg_or_default
 from imitation.data.wrappers import RolloutInfoWrapper
 from imitation.util.util import make_vec_env
 import numpy as np
+from stable_baselines3.common.callbacks import ProgressBarCallback,EvalCallback,StopTrainingOnNoModelImprovement
 
 print("--------------Make Env.--------------")
-env = gym.make('custom/PccNs-v1')
+env = gym.make('PccNs-v0')
 
-venv=make_vec_env(
-    'custom/PccNs-v1',
-    rng=np.random.default_rng(),
-    n_envs=4,
-    post_wrappers=[
-        lambda env,_: RolloutInfoWrapper(env)
-    ],
-)
+# venv=make_vec_env(
+#     'custom/PccNs-v1',
+#     rng=np.random.default_rng(),
+#     n_envs=4,
+#     post_wrappers=[
+#         lambda env,_: RolloutInfoWrapper(env)
+#     ],
+# )
 
 #env = gym.make('CartPole-v0')
+stop_train_callback = StopTrainingOnNoModelImprovement(max_no_improvement_evals=30, min_evals=5, verbose=1)
+eval_callback = EvalCallback(env, eval_freq=8192, callback_after_eval=stop_train_callback, verbose=1)
+
+
 
 # model = PPO1(MyMlpPolicy, env, verbose=1, schedule='constant', timesteps_per_actorbatch=8192, optim_batchsize=2048, gamma=gamma)
 print("--------------Build Model-------------")
-model=PPO("MlpPolicy",env, verbose=1, batch_size=1024, gamma=0.99,tensorboard_log='./outputs/')
+model=PPO("MlpPolicy",env, verbose=1, batch_size=8192, gamma=0.99,tensorboard_log='./outputs/')
 print("--------------Ready to Learn--------------")
-model.learn(total_timesteps=32000*410)
-model.save("model_12.zip")
+model.learn(total_timesteps=3200*410,progress_bar=1,callback=eval_callback)
+model.save("model_sb3.zip")
