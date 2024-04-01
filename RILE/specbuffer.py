@@ -2,7 +2,7 @@ import torch
 import numpy as np
 
 
-class ReplayBuffer:
+class SpecReplayBuffer:
     def __init__(self,buffer_size):
         self.buffer_size=buffer_size
         self.index=0
@@ -85,12 +85,12 @@ class ReplayBuffer:
     
     def from_before_state(self,index:list):
         length=len(self.state[0])
-        state=[torch.FloatTensor(self.get_state_padding(self.state[int(i/length)],i%length,10,True)[0]).view(-1) for i in index]
+        state=[torch.FloatTensor(np.array(self.get_state_padding(self.state[int(i/length)],i%length,10,True)[0])).view(-1) for i in index]
         return torch.stack(state,dim=0).detach()
     
     def from_after_state(self,index:list):
         length=len(self.state[0])
-        state=[torch.FloatTensor(self.get_state_padding(self.state[int(i/length)],i%length,10,True)[1]).view(-1) for i in index]
+        state=[torch.FloatTensor(np.array(self.get_state_padding(self.state[int(i/length)],i%length,10,True)[1])).view(-1) for i in index]
         return torch.stack(state,dim=0).detach()
         
     def clean(self):#这里暂时有个bug，不能解决append那里，不过暂时用不上这个函数，就先不管了

@@ -18,6 +18,10 @@ filelist.sort()
 # evalfile=open('student_model_evaluation','a')
 json_records=[]
 
+if sys.argv[3]:
+    while not filelist[0][33:37]==sys.argv[3]:
+        filelist.pop(0)
+
 for file in filelist:
     with open(file,'rb') as f:
         sa.model=torch.load(f)

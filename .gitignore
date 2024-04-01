@@ -18,8 +18,11 @@ log
 *.pkl
 *.pyc
 
-#断点
+#忽略断点
 /gym/checkpoint
 /gym/*.meta
 /gym/*.index
 /gym/*00001
+
+#忽略nohup日志
+nohup.out

@@ -1,13 +1,13 @@
 import gym
-# from buffer import ReplayBuffer
-from specbuffer import ReplayBuffer
+from buffer import ReplayBuffer
+from specbuffer import SpecReplayBuffer
 import contextlib
 
 class CustomEnv:
     def __init__(self,env_id,buffer_size):
         with contextlib.redirect_stderr(None):
             self.env=gym.make(env_id)
-        self.student_buffer=ReplayBuffer(buffer_size)
+        self.student_buffer=SpecReplayBuffer(buffer_size)
         self.teacher_buffer=ReplayBuffer(buffer_size)
         
     def reset(self):
