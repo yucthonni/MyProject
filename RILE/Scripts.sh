@@ -1,0 +1,1 @@
+python solveecontinuous.py --smodel "/home/tools/DR/MyProject/RILE/model/student/082152/studentmodel0855.pt" --tmodel "/home/tools/DR/MyProject/RILE/model/teacher/071802/teachermodel2351.pt" --iter 50

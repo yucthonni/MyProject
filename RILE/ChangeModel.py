@@ -8,8 +8,12 @@ import os
 from tqdm import tqdm
 
 # model=PPO(30,1,256,None)
+isStu=True
 path=sys.argv[1]
-filelist=glob('model/student/'+path+'/studentmodel*.pt')
+if isStu:
+    filelist=glob('model/student/'+path+'/studentmodel*.pt')
+else:
+    filelist=glob('model/teacher/'+path+'/teachermodel*.pt')
 
 model=ActorCritic(30,1,256,True,0.6)
 

@@ -43,8 +43,7 @@ class Student(StudentAgent):
 class Teacher(TeacherAgent):
     def __init__(self, state_dim, action_dim, env:CustomEnv, expert_trajectory):
         super().__init__(state_dim, action_dim, env, expert_trajectory)
-        self.model = PPO(10, action_dim,
-                         256, self.replay_buffer)
+        self.model = PPO(10, action_dim, 256, self.replay_buffer, False)
         
     def ComputeReward(self):
         pb=tqdm(range(min(self.trajectory_buffer.index,self.trajectory_buffer.buffer_size)))
@@ -77,25 +76,30 @@ parser.add_argument('--smodel',type=str,required=True,help='Path to Student Mode
 parser.add_argument('--tmodel',type=str,required=True,help='Path to Teacher Model')
 parser.add_argument('--iter',type=int,required=True)
 args=parser.parse_args()
-smodel_dir=args.smodel
-tmodel_dir=args.tmodel
+smodel_path=args.smodel
+tmodel_path=args.tmodel
 iter=args.iter
 
 stupath='model/student/'+datetime.now().strftime('%d%H%M')
 os.makedirs(stupath)
-smodel_path=glob(smodel_dir+'/*.zip')[-1]
-tmodel_path=glob(tmodel_dir+'/*.zip')[-1]
+# smodel_path=glob(smodel_dir+'/*.zip')[-1]
+# tmodel_path=glob(tmodel_dir+'/*.zip')[-1]
 
 
 with open(smodel_path,'rb') as fp:
     sm=torch.load(fp)
-    sa.model.policy_old=sm.policy_old
-    sa.model.policy=sm.policy
+    sa.model.policy_old.load_state_dict(sm.state_dict())
+    sa.model.policy_old.eval()
+    sa.model.policy.load_state_dict(sm.state_dict())
+    sa.model.policy.eval()
+    
     
 with open(tmodel_path,'rb') as fp:
     tm=torch.load(fp)
-    ta.model.policy_old=tm.policy_old
-    ta.model.policy=tm.policy
+    ta.model.policy_old.load_state_dict(tm)
+    ta.model.policy_old.eval()
+    ta.model.policy.load_state_dict(tm)
+    ta.model.policy.eval()
 
 
 for i in range(iter):
@@ -109,8 +113,8 @@ for i in range(iter):
     ta.ComputeReward()
     print('<Student> Training by Given Rewards ......')
     sa.train(1000,2048)
-    if i%50==0:
+    if i%10==0:
         with open(stupath+'/studentmodel'+datetime.now().strftime('%H%M')+'.pt','wb') as f:    
-            torch.save(sa.model.policy_old,f)
+            torch.save(sa.model.policy_old.state_dict(),f,_use_new_zipfile_serialization=False)
 
 

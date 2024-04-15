@@ -10,7 +10,26 @@ device = torch.device('cpu')
 if (torch.cuda.is_available()):
     device = torch.device('cuda:0')
     torch.cuda.empty_cache()
-debug=False
+print(device)
+
+################################## PPO Policy ##################################
+# class RolloutBuffer:
+#     def __init__(self):
+#         self.actions = []
+#         self.states = []
+#         self.logprobs = []
+#         self.rewards = []
+#         self.state_values = []
+#         self.is_terminals = []
+
+#     def clear(self):
+#         del self.actions[:]
+#         del self.states[:]
+#         del self.logprobs[:]
+#         del self.rewards[:]
+#         del self.state_values[:]
+#         del self.is_terminals[:]
+
 
 class ActorCritic(nn.Module):
     def __init__(self, state_dim, action_dim, hidden_dim, has_continuous_action_space, action_std_init):
@@ -59,6 +78,7 @@ class ActorCritic(nn.Module):
         raise NotImplementedError
 
     def act(self, state):
+
         if self.has_continuous_action_space:
             action_mean = self.actor(state)
             cov_mat = torch.diag(self.action_var).unsqueeze(dim=0)
@@ -74,6 +94,20 @@ class ActorCritic(nn.Module):
         return action.detach(), action_logprob.detach(), state_val.detach()
 
     def evaluate(self, state, action):
+
+        # if self.has_continuous_action_space:
+        #     action_mean = self.actor(state)
+
+        #     action_var = self.action_var.expand_as(action_mean)
+        #     cov_mat = torch.diag_embed(action_var).to(device)
+        #     dist = MultivariateNormal(action_mean, cov_mat)
+
+        #     # For Single Action Environments.
+        #     if self.action_dim == 1:
+        #         action = action.reshape(-1, self.action_dim)
+        # else:
+        #     action_probs = self.actor(state)
+        #     dist = Categorical(action_probs)
         action_mean = self.actor(state)
         action_var = self.action_var.expand_as(action_mean)
         cov_mat = torch.diag_embed(action_var).to(device)
@@ -88,7 +122,7 @@ class ActorCritic(nn.Module):
 
 
 class PPO:
-    def __init__(self, state_dim, action_dim, hidden_dim, replay_buffer, isStu=True, lr_actor=1e-3, lr_critic=1e-3, gamma=0.99, K_epochs=80, eps_clip=0.2, has_continuous_action_space=True, action_std_init=0.6):
+    def __init__(self, state_dim, action_dim, hidden_dim, replay_buffer, lr_actor=1e-3, lr_critic=1e-3, gamma=0.99, K_epochs=80, eps_clip=0.2, has_continuous_action_space=True, action_std_init=0.6):
 
         self.has_continuous_action_space = has_continuous_action_space
 
@@ -113,16 +147,6 @@ class PPO:
         self.policy_old.load_state_dict(self.policy.state_dict())
 
         self.MseLoss = nn.MSELoss()
-        
-        #Tensorboard Writer
-        if isStu:
-            self.tensorboard_writer=SummaryWriter('./runs/PPOee/Student/')
-        else:
-            self.tensorboard_writer=SummaryWriter('./runs/PPOee/Teacher/')
-        self.loss=[]
-        self.value_loss=[]
-        self.policy_entropy=[]
-        self.ptr=0
 
     def set_action_std(self, new_action_std):
         self.action_std = new_action_std
@@ -145,6 +169,11 @@ class PPO:
             state = torch.FloatTensor(state).view(-1).to(device)
             action, action_logprob, state_val = self.policy_old.act(state)
 
+        # self.buffer.states.append(state)
+        # self.buffer.actions.append(action)
+        # self.buffer.logprobs.append(action_logprob)
+        # self.buffer.state_values.append(state_val)
+
         return action.detach().cpu().numpy().flatten(), action, action_logprob, state_val
 
     def update(self, batch_size):
@@ -164,6 +193,11 @@ class PPO:
         rewards = torch.tensor(rewards, dtype=torch.float32).to(device)
         rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
 
+        # convert list to tensor
+        # old_states = torch.squeeze(torch.stack([self.buffer.state[i] for i in index])).detach().to(device)
+        # old_actions = torch.squeeze(torch.stack([self.buffer.action[i] for i in index]), dim=0).detach().to(device)
+        # old_logprobs = torch.squeeze(torch.stack([self.buffer.logprobs[i] for i in index], dim=0)).detach().to(device)
+        # old_state_values = torch.squeeze(torch.stack([self.buffer.state_value[i] for i in index], dim=0)).detach().to(device)
         old_states = self.buffer.state_from_index(index).to(device)
         old_actions = torch.stack([self.buffer.action[i]
                                   for i in index], dim=0).detach().to(device)
@@ -196,14 +230,6 @@ class PPO:
             # final loss of clipped objective PPO
             loss = -torch.min(surr1, surr2) + 0.5 * \
                 self.MseLoss(state_values, rewards) - 0.01 * dist_entropy
-                
-            # self.loss.append(loss)
-            # self.value_loss.append(self.MseLoss(state_values, rewards))
-            # self.policy_entropy.append(dist_entropy)
-            self.tensorboard_writer.add_scalar("Loss", loss.mean(), self.ptr)
-            self.tensorboard_writer.add_scalar("Value Loss", self.MseLoss(state_values, rewards), self.ptr)
-            self.tensorboard_writer.add_scalar("Entropy", dist_entropy.mean(), self.ptr)
-            self.ptr+=1
 
             # take gradient step
             self.optimizer.zero_grad()
@@ -215,14 +241,6 @@ class PPO:
 
         # clear buffer
         # self.buffer.clear()
-        
-    def WriteTensorboard(self,logdir:str):
-        
-        for i in range(len(self.loss)):
-            self.tensorboard_writer.add_scalar("Loss", self.loss[i], i)
-            self.tensorboard_writer.add_scalar("Value Loss", self.value_loss[i], i)
-            self.tensorboard_writer.add_scalar("Entropy", self.policy_entropy[i], i)
-        
 
     def save(self, checkpoint_path):
         torch.save(self.policy_old.state_dict(), checkpoint_path)
