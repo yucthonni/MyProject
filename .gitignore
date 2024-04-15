@@ -1,28 +1,28 @@
 #忽略json日志文件
-
-/gym/*.json
-/RILE/*.json
+*.json
 log
+*.out
 
 #忽略tensorboard日志
-
 /gym/outputs/
 /gym/output/
 
 #忽略pycache
-
 /gym/__pycache__/
 
 #忽略模型
 *.zip
 *.pkl
+*.pt
+*.pth
 *.pyc
+events*
 
 #忽略断点
 /gym/checkpoint
-/gym/*.meta
-/gym/*.index
-/gym/*00001
+*.meta
+*.index
+*00001
 
 #忽略nohup日志
 nohup.out

@@ -1,9 +1,7 @@
 import torch
-import torch.nn as nn
 import numpy as np
 from tqdm import tqdm
-from specbuffer import SpecReplayBuffer
-from buffer import ReplayBuffer
+
 from PPOee import PPO
 import gym
 from CustomEnv import CustomEnv
@@ -11,18 +9,18 @@ from Student_Agent import StudentAgent
 from TeacherAgent import TeacherAgent
 from ExpertTrajectory import ExpertTrajectory
 
-import contextlib
+
 import network_sim
-from stable_baselines3 import PPO as sb3ppo
-import pickle
 from datetime import datetime
 
 import os
 import sys
+import argparse
+from glob import glob
 
 
 device='cuda'
-BUFFER_SIZE=14400
+BUFFER_SIZE=28800
 
 
 class Student(StudentAgent):
@@ -45,16 +43,19 @@ class Student(StudentAgent):
 class Teacher(TeacherAgent):
     def __init__(self, state_dim, action_dim, env:CustomEnv, expert_trajectory):
         super().__init__(state_dim, action_dim, env, expert_trajectory)
+        self.model = PPO(10, action_dim,
+                         256, self.replay_buffer)
         
     def ComputeReward(self):
         pb=tqdm(range(min(self.trajectory_buffer.index,self.trajectory_buffer.buffer_size)))
         for i in pb:
             length=len(self.trajectory_buffer.state[0])
             s=torch.FloatTensor(self.trajectory_buffer.get_state_padding(self.trajectory_buffer.state[int(i/length)],i%length,10,True)[1]).view(-1)
-            sa_pair=torch.cat((s,self.trajectory_buffer.action[i]),-1)
-            reward,_,l,v=self.model.select_action(sa_pair)
+            r=torch.FloatTensor(self.trajectory_buffer.get_reward_padding(self.trajectory_buffer.reward,i,10,length,True)[1]).view(-1)
+            reward,tensor_reward,l,v=self.model.select_action(r)
+            sa_pair=torch.cat((s.to(device),tensor_reward.view(-1)),-1)
             self.replay_buffer.store(
-                sa_pair,
+                r,
                 reward,
                 l,
                 self.trajectory_buffer.next_state[i],
@@ -64,45 +65,52 @@ class Teacher(TeacherAgent):
             )
             self.trajectory_buffer.reward[i]=reward
             pb.update()
-        self.discriminator.collect_expert()
 
 
 env=CustomEnv('PccNs-v0',BUFFER_SIZE)
 
-# et=ExpertTrajectory(4000)
 sa=Student(np.prod(env.get_state_dim()),env.get_action_dim()[0],env)
-# ta=Teacher(np.prod(env.get_state_dim()),env.get_action_dim()[0],env,et)
+ta=Teacher(np.prod(env.get_state_dim()),env.get_action_dim()[0],env,None)
 
-
-
-# et.load_expert_model('verygood.zip')
-# et.generate_trajectory(env)
+parser=argparse.ArgumentParser()
+parser.add_argument('--smodel',type=str,required=True,help='Path to Student Model')
+parser.add_argument('--tmodel',type=str,required=True,help='Path to Teacher Model')
+parser.add_argument('--iter',type=int,required=True)
+args=parser.parse_args()
+smodel_dir=args.smodel
+tmodel_dir=args.tmodel
+iter=args.iter
 
 stupath='model/student/'+datetime.now().strftime('%d%H%M')
-teapath='model/teacher/'+datetime.now().strftime('%d%H%M')
 os.makedirs(stupath)
-os.makedirs(teapath)
+smodel_path=glob(smodel_dir+'/*.zip')[-1]
+tmodel_path=glob(tmodel_dir+'/*.zip')[-1]
 
-for i in range(int(sys.argv[1])):
+
+with open(smodel_path,'rb') as fp:
+    sm=torch.load(fp)
+    sa.model.policy_old=sm.policy_old
+    sa.model.policy=sm.policy
+    
+with open(tmodel_path,'rb') as fp:
+    tm=torch.load(fp)
+    ta.model.policy_old=tm.policy_old
+    ta.model.policy=tm.policy
+
+
+for i in range(iter):
     # with contextlib.redirect_stderr(None):
     print('第',i+1,'次更新')
     print('Cleaning Buffer ......')
     sa.replay_buffer.clean()
     print('<Student> Generating Trajectorys ......')
-    sa.generate_trajectory(36)
-    # print('<Teacher> is Computing Rewards of Trajectorys ......')
-    # ta.ComputeReward()
+    sa.generate_trajectory(72)
+    print('<Teacher> is Computing Rewards of Trajectorys ......')
+    ta.ComputeReward()
     print('<Student> Training by Given Rewards ......')
-    sa.train(1000,512)
-    if i%5==0:
+    sa.train(1000,2048)
+    if i%50==0:
         with open(stupath+'/studentmodel'+datetime.now().strftime('%H%M')+'.pt','wb') as f:    
-            torch.save(sa.model.policy_old.state_dict(),f,_use_new_zipfile_serialization=False)
-    # if i%10==0:
-    #     print('<Teacher> Updating Discriminator ......')
-    #     ta.discriminator.update(512,True)
-    #     print('<Teacher> Training by Discriminator ......')
-    #     ta.trainPPO(2000,1024,True)
-    #     with open(teapath+'/teachermodel'+datetime.now().strftime('%H%M')+'.zip','wb') as f:    
-    #         torch.save(ta.model,f)
+            torch.save(sa.model.policy_old,f)
 
 

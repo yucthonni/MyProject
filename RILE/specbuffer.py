@@ -77,11 +77,25 @@ class SpecReplayBuffer:
         # return b[max(0,index):min(index+2*offset,len(a)+2*offset)]
         return b[max(0,index+1):index+offset+1],b[index+offset+1:min(index+2*offset+1,len(a)+2*offset+1)]
     
+    def get_reward_padding(self,a:list,index:int,offset:int,interval:int,zero_padding:bool):
+        low=int(index/interval)*interval
+        high=(int(index/interval)+1)*interval
+        if not zero_padding:
+            # return a[max(0,index-offset):min(index+offset,len(a))]
+            return a[max(low,index-offset+1):index+1],a[index+1:min(index+offset+1,high)]
+        b=a.copy()
+        zero_padding=b[low]
+        for _ in range(offset):
+        # b.insert(low,zero_padding)
+            b.insert(high,zero_padding)
+        for _ in range(offset):
+            b.insert(low,zero_padding)
+        # return b[max(0,index):min(index+2*offset,len(a)+2*offset)]
+        return b[max(low,index+1):index+offset+1],b[index+offset+1:min(index+2*offset+1,high+2*offset)]
+    
+    
     def state_from_index(self,index:list):
-        if self.isAfter:
-            return self.from_after_state(index)
-        else:
-            return self.from_before_state(index)
+        return self.from_before_state(index)
     
     def from_before_state(self,index:list):
         length=len(self.state[0])
@@ -91,6 +105,11 @@ class SpecReplayBuffer:
     def from_after_state(self,index:list):
         length=len(self.state[0])
         state=[torch.FloatTensor(np.array(self.get_state_padding(self.state[int(i/length)],i%length,10,True)[1])).view(-1) for i in index]
+        return torch.stack(state,dim=0).detach()
+    
+    def from_after_reward(self,index:list):
+        length=len(self.state[0])
+        state=[torch.FloatTensor(np.array(self.get_reward_padding(self.reward,i,10,length,True)[1])).view(-1) for i in index]
         return torch.stack(state,dim=0).detach()
         
     def clean(self):#这里暂时有个bug，不能解决append那里，不过暂时用不上这个函数，就先不管了

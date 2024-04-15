@@ -22,7 +22,7 @@ class Discriminator_network(nn.Module):
     
 class Discriminator():
     def __init__(self,input_dim,hidden_dim,batch_size,sbuffer,ebuffer):
-        self.model=Discriminator_network(input_dim,hidden_dim)
+        self.model=Discriminator_network(input_dim,hidden_dim).to(device)
         self.sbuffer=sbuffer
         self.ebuffer=ebuffer
         self.batch_size=batch_size
@@ -32,13 +32,13 @@ class Discriminator():
         self.loss_criterion=nn.BCELoss()
         
     def collect_expert(self):
-        self.expert_dist=torch.cat((torch.stack(self.ebuffer.state,dim=0),torch.stack(self.ebuffer.action,dim=0)),1)
+        self.expert_dist=torch.cat((torch.stack(self.ebuffer.state,dim=0),torch.stack(self.ebuffer.action,dim=0)),1).to(device)
         
     def collect_dist(self,batch_size):
         index=self.sbuffer.sample(batch_size,True)
         state=self.sbuffer.from_after_state(index)
         action=torch.stack([self.sbuffer.action[i] for i in index],dim=0)
-        self.policy_dist=torch.cat((state,action),1)
+        self.policy_dist=torch.cat((state,action),1).to(device)
         
     def update(self,total_timestep:int,progress=True):
         if progress:
@@ -47,8 +47,8 @@ class Discriminator():
                 stu_traj=self.collect_dist(self.batch_size)
                 eo=self.model(self.expert_dist)
                 so=self.model(self.policy_dist)
-                loss=self.loss_criterion(eo,torch.ones(len(self.expert_dist),1))+\
-                    self.loss_criterion(so,torch.zeros(self.batch_size,1))
+                loss=self.loss_criterion(eo,torch.ones(len(self.expert_dist),1,device=device))+\
+                    self.loss_criterion(so,torch.zeros(self.batch_size,1,device=device))
                 
                 self.optimizer.zero_grad()
                 loss.backward()
@@ -59,8 +59,8 @@ class Discriminator():
                 stu_traj=self.collect_dist(self.batch_size)
                 eo=self.model(self.expert_dist)
                 so=self.model(self.policy_dist)
-                loss=self.loss_criterion(eo,torch.ones(len(self.expert_dist),1))+\
-                    self.loss_criterion(so,torch.zeros(self.batch_size,1))
+                loss=self.loss_criterion(eo,torch.ones(len(self.expert_dist),1,device=device))+\
+                    self.loss_criterion(so,torch.zeros(self.batch_size,1,device=device))
                 
                 self.optimizer.zero_grad()
                 loss.backward()
